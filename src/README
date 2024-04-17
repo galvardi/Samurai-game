@@ -1,0 +1,134 @@
+galvardi
+
+
+CONTROLS :
+space to jump ,space & shift to fly, arrow keys to move left and right
+
+
+=============================
+=             UML           =
+=============================
+As can be seen in the first UML for our initial design we first planned to have a class called Trunk which
+would represent a tree (each tree in the game would be an instance of trunk). Trunk would be in charge
+creating and holding a 2d array with of all of its leaves. and so tree.createInRange would call upon Trunks
+ctor each time a tree is to be placed. in addition we first devised that leaf would extend game object.
+
+In the second UML it can be seen that we did away with the Trunk class. As we noticed that having a class
+representing a tree gives us no further functionality. since we have no need for holding on to the leaf array
+of each tree after they have been added to the game collection. as well as the trunks themselves do not differ
+ in their function from Blocks. and so we moved this responsibility to the tree class, which now has a create
+ trunks function and a create leaves function bypassing the need for a trunk class. We also noticed the "is a"
+ relationship between leaf and block and decided to have leaf extend block instead of gameObject since we
+ view a leaf as a block with extended functionality. our bonuses can be see as well, the items package which
+ we added and we will explain later on in this Readme.
+
+=============================
+=      INFINITE WORLD       =
+=============================
+We choose to create a new class WorldManager that extends the class GameObject.
+This class is responsible for building and initializing the different objects of the game including:
+sky, sun, night, halo, terrain, tree and items. The worldManager divides the screen to thirds.
+It sets a left and right boundary: the left boundary represent the first third of the visible screen and
+the right represents the third third. Furthermore, the worldManager creates 5 different screen thirds,
+and is responsible for making sure that along the game, there will always be 5 different parts of the screen
+(of which two are not visable).
+One of the reasons we choose to create the worldManager as a GameObject is to be able to use the update
+function. We are using this function in order to keep maintaining the 5 parts.
+We did so by checking the center of the camera (that is set to the location of the avatar) .
+If the center x-coord is bigger than the right border, it means that our avatar is going to the right:
+In this case we removed the leftmost part out of the five and added a new one to the right of the
+rightmost one, and of course update the borders accordingly.
+If the center is smaller than the left boundary, we do the exact opposite.
+If we indeed need to create a new part (third) and remove one from the game, the worldManager update function
+is responsible for building and removing all the necessary game objects.
+By keeping the status of only five parts at a time, we are able to guaranty a stable infinite run.
+
+=============================
+=       TREES PACKAGE       =
+=============================
+The tree package contains two classes- Leaf, Tree.
+The Tree class is responsible for the creation and placement of in game trees.
+a tree in the game is a trunk that is built from blocks and leaves.
+The different patterns of the leaves are initialized in the class constructor.
+The pattern are generated randomly for each tree class only once in order to save important running time.
+One of the class main responsibilities is to create all the trees in a certain range in a random way.
+This function createInRange is the one that receives the wanted range and randomly build the trees in it.
+In this function, for each block in the range, we check if we want to create a new tree in its location.
+We decide it by:
+1) checking that this location in not near the avatar (the center of the window important only on
+    initialization).
+2) the tree counter is less than the max number of trees we want in a range.
+3) there was no tree planted in the previous block.
+4) if the random num we got is smaller than the tree probability – keeps it random.
+If we do want to create a new tree in the location we randomly decide the size of the tree and create its
+trunk. The trunk is blocks * size of the tree, that are placed on top of each other.
+We choose to not create a new class representing the trunk because the trunk do not have any special
+characteristics that will require its own class. Instead, we choose to use the existing Block class,
+but with a small addition, the trunk blocks are set with a tag that separates them from the ground block for
+future collisions.
+After creating the trunk, we randomly choose the num of leaves for the tree, and calculate their exact
+location. For each leaf we create a new leaf and call its wind function.
+The Leaf class extends Block and represents a single leaf. In the constructor, each leaf gets a random
+lifetime cycle. Also, in the constructor we create a scheduled task regarding the time this leaf
+will fall.  Each leaf have 2 qualities – the wind and the fall.
+At the wind function we also use a schedule task and the function is called from the tree class so each leaf
+will receive a different delay. The schedule task while using two transitions is responsible for the movement
+and size difference of each leaf.
+The fall function is called from the schedule task in the constructor.
+The function is responsible for executing the fadeout and the fall of the leaf.
+When the lifetime of the leaf is over (fadeout is over), the fadeout function calls the relive function that
+returns the leaf to its original location and state. The process keeps on going by setting new schedule tasks.
+In addition we overrided  the OnCollisionEnter function in order to stop the movement of each leaf as soon as
+it meets the ground blocks.
+
+=============================
+=      DESIGN DILEMMAS      =
+=============================
+One dilemma we faced was about the creation of the trees.
+At first we created two different classes for Trunk and Leaf.
+In this approach we wanted the tree class to randomly decide for every block if there will be a tree on
+top of it, if yes, we wanted the Trunk class to represent an entire tree by holding a 2D array of leaves.
+After thinking about it we understood that there is no need in saving the leaves of each tree as each one is
+added to the GameObject collection. After realizing that, there was also no actual need in the Trunk class.
+Another dilemma was how to divide the different elements of the game to the different layers.
+After we understood all the different elements and their interactions with each other. we decided on the
+following division:
+The avatar will be in the DEFAULT layer as it needs to collide with different game objects as well as being on
+ the move as it is the primary object of the game.
+The sky, sun and halo will be at the BACKGROUND layer and will be initialized by this order.
+That is because we wanted the three objects to not interact with element outside this layer.
+We set the tree to be in the STATIC layer because the trunks are not supposed to move and should collide with
+the avatar. In order to allow the game to do less actions in each update, we separated the ground into two
+different layers. Only the top two layers of the ground will be at the STATIC layer, and the rest will be at
+STATIC layer+1. The two top layers are the one that the avatar can collide with, and that is why we choose to
+put them in the same layer as the tree trunks.
+
+=============================
+=            BONUS          =
+=============================
+music- we added Japanese music to go along with our samurai avatar, coin sound effect, damage sound effect.
+coins- we added spinning coins that are randomly spread in the sky.
+The avatar will try to collect the coins. If the player manages to create a collision between a coin object
+and the avatar, it will get an extra 10 score points.
+we added a coin sound effect as well, to give the player more gratification.
+fire- we added fire pit objects that are randomly spread out on the ground surface.
+The avatar will try to avoid the fire. If a collision between a fire and the avatar is detected,
+that the user will lose 15 score points, and a damage sound effect will play to warn the player.
+To implement the fire and coin objects we created a new class called Items.
+This class is responsible for all the possible items in the game.
+In addition, we implemented a function called createInRange, that acts similarly to the way we implemented
+the tree and terrain createInRange function. The WorldManager update function calls this function, so there
+will be items through out the infinite world.
+We also created a new class for Fire and a new class for Coin.
+Both classes extend the gameObject class. The reason we choose to do so, is because we want to change
+different game objects when a collision is detected. Furthermore, the reason we choose to create the Item
+class, is to keep distinct separation between the game, that can run without the items, and the items.
+The classes Item, Coin and Fire placed in a package called items.
+NumericScoreCounter – we created a counter that displays at any moment the current score the user has.
+We created a new class called NumericScoreCounter in a new package ui.
+This class extends gameObject so it can use the update function and accurately display the users current
+score.
+
+
+
+
